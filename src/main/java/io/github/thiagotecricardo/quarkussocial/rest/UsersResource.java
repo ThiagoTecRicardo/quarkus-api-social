@@ -5,12 +5,16 @@ import io.github.thiagotecricardo.quarkussocial.domain.model.User;
 import io.github.thiagotecricardo.quarkussocial.domain.repository.UserRepository;
 import io.github.thiagotecricardo.quarkussocial.rest.dto.CreateUserRequest;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
+import org.h2.constraint.Constraint;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Set;
 
 @Path("/users")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -18,15 +22,28 @@ import javax.ws.rs.core.Response;
 public class UsersResource {
 
     private UserRepository repository;
+    private final Validator validator;
 
     @Inject
-    public UsersResource(UserRepository repository){
+    public UsersResource(UserRepository repository, Validator  validator){
+
         this.repository = repository;
+        this.validator = validator;
     }
 
     @POST
     @Transactional
     public Response createUser(CreateUserRequest userRequest){
+
+      Set<ConstraintViolation<CreateUserRequest>> violations = validator.validate(userRequest);
+
+      if (!violations.isEmpty()){
+
+          ConstraintViolation<CreateUserRequest> erro = violations.stream().findAny().get();
+          String errorMessage = erro.getMessage();
+          return Response.status(400).entity(errorMessage).build();
+      }
+
         User user = new User();
         user.setName(userRequest.getName());
         user.setAge(userRequest.getAge());
