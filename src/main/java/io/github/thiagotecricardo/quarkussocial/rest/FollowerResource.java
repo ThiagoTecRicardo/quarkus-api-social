@@ -29,6 +29,10 @@ public class FollowerResource {
     public Response followUser(
             @PathParam("userId") Long userId, FollowerRequest followerRequest){
 
+        if (userId.equals(followerRequest.getFollowerId())){
+            return Response.status(Response.Status.CONFLICT).entity("Voce não pode seguir voce mesmo").build();
+        }
+
         var user = userRepository.findById(userId);
         if (user == null){
             return Response.status(Response.Status.NOT_FOUND).build();
